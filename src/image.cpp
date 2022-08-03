@@ -42,12 +42,18 @@ pixel giulia::supersampling(
 		return pixel(0, 0, 0);
 
 	if(stepsize == 0)
-		real_t stepsize = 0.25 / state["width"];
+		stepsize = 1.0 / state["width"];
 
-	pixel p1 = supersampling(x + (stepsize), y + (stepsize), state, draw, order / 2, stepsize / 2);
-	pixel p2 = supersampling(x + (stepsize), y + (stepsize * 3), state, draw, order / 2, stepsize / 2);
-	pixel p3 = supersampling(x + (stepsize * 3), y + (stepsize), state, draw, order / 2, stepsize / 2);
-	pixel p4 = supersampling(x + (stepsize * 3), y + (stepsize * 3), state, draw, order / 2, stepsize / 2);
+	// Grid pattern
+	const real_t x1 = x + (stepsize);
+	const real_t x2 = x + (stepsize * 3);
+	const real_t y1 = y + (stepsize);
+	const real_t y2 = y + (stepsize * 3);
+
+	pixel p1 = supersampling(x1, y1, state, draw, order / 2, stepsize / 2.0);
+	pixel p2 = supersampling(x1, y2, state, draw, order / 2, stepsize / 2.0);
+	pixel p3 = supersampling(x2, y1, state, draw, order / 2, stepsize / 2.0);
+	pixel p4 = supersampling(x2, y2, state, draw, order / 2, stepsize / 2.0);
 
 	unsigned int r = (((unsigned int) p1.r) + p2.r + p3.r + p4.r) / 4;
 	unsigned int g = (((unsigned int) p1.g) + p2.g + p3.g + p4.g) / 4;
