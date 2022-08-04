@@ -22,6 +22,11 @@ int giulia::save_image(std::string filename, image img) {
 }
 
 
+pixel giulia::lerp(pixel P1, pixel P2, real_t interp) {
+	return (P1 + (P2 - P1) * interp);
+}
+
+
 real_t giulia::intensity(pixel p) {
 	return theoretica::sqrt(square(p.r) + square(p.g) + square(p.b));
 }

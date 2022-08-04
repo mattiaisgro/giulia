@@ -4,6 +4,8 @@
 
 #include "common.h"
 #include <string>
+#include <vector>
+#include <functional>
 
 
 namespace giulia {
@@ -39,30 +41,21 @@ namespace giulia {
 	};
 
 
-	inline pixel lerp(pixel P1, pixel P2, real_t interp) {
-		return (P1 + (P2 - P1) * interp);
-	}
-
-
+	// An RGB encoded image
 	struct image {
 
 		public:
 
 			image(unsigned int w, unsigned int h) : width(w), height(h) {
 
-				if(data != nullptr)
-					delete[] data;
-
-				data = new pixel[w * h];
-			}
-
-			inline ~image() {
-				// if(data != nullptr)
-				// 	delete[] data;
+				if(data.size())
+					data.clear();
+				
+				data.resize(w * h);
 			}
 
 			inline pixel* get_data() const {
-				return data;
+				return (pixel*) &(data[0]);
 			}
 
 			inline pixel get_pixel(unsigned int i) const {
@@ -90,27 +83,35 @@ namespace giulia {
 		private:
 			unsigned int width {1024};
 			unsigned int height {1024};
-			pixel* data {nullptr};
+			std::vector<pixel> data;
 
 	};
 
-
-	using draw_function = pixel(*)(real_t, real_t, global_state&);
+	// A pixel drawing function
+	using draw_function = std::function<pixel(real_t, real_t, global_state&)>;
 
 
 	// Save an image to file in the BMP format
 	// Returns 0 on success
 	int save_image(std::string filename, unsigned int width, unsigned int height, pixel* data);
 
+
 	// Save an image to file in the BMP format
 	// Returns 0 on success
 	int save_image(std::string filename, image img);
 
+
+	// Linear interpolation between pixels
+	pixel lerp(pixel P1, pixel P2, real_t interp);
+
+
 	// Pixel intensity
 	real_t intensity(pixel p);
 
+
 	// Apply contrast
 	pixel contrast(pixel p, real_t value);
+
 
 	// Supersampling Anti-aliasing with grid points
 	pixel supersampling(

@@ -58,6 +58,9 @@ int main(int argc, char const *argv[]) {
 	// Output file name
 	std::string filename = "giulia.bmp";
 
+	// Rendering progress counter
+	unsigned int progress = 10;
+
 	// Global state variables
 	global_state state;
 	state["seed"] = seed;
@@ -65,6 +68,13 @@ int main(int argc, char const *argv[]) {
 	state["height"] = height;
 	state["aspect_ratio"] = aspect_ratio;
 	state["iteration"] = 0;
+
+	// Set supersampling level from terminal
+	if(argc >= 5) {
+		state["supersampling"] = std::atoi(argv[4]);
+	} else {
+		state["supersampling"] = 1;
+	}
 
 	// Read file name from terminal
 	if(argc >= 2)
@@ -81,6 +91,11 @@ int main(int argc, char const *argv[]) {
 	// Render the image
 	for (int i = 0; i < size; ++i) {
 
+		if((i == (size * progress / 100))) {
+			std::cout << "[" << progress << "%]" << std::endl;
+			progress += 10;
+		}
+
 		state["iteration"] += 1;
 		
 		// Convert index to pixel location
@@ -90,8 +105,10 @@ int main(int argc, char const *argv[]) {
 		// The origin corresponds to the center of the image
 
 		// Draw pixel
-		img[i] = draw(x, y, state);
+		img[i] = supersampling(x, y, state, draw, state["supersampling"], 0.5 / state["width"]);
 	}
+
+	std::cout << "[100%]" << std::endl;
 
 	// Save the result to file
 	std::cout << "Saving image as " << filename << " ..." << std::endl;

@@ -50,7 +50,7 @@ pixel giulia::draw_julia(real_t x, real_t y, real_t c_x, real_t c_y, unsigned in
 	real iter_factor = i / (real) max_iter;
 
 	// Smooth intensity factor
-	real intensity_factor = (i - ln(ln(z.modulus()) / ln(R)) / LN2) / (real) max_iter;
+	real intensity_factor = (i - ln(0.5 * ln(z.square_modulus()) / ln(R)) / LN2) / (real) max_iter;
 
 	// Base and trap colors
 	vec3 base_color = {0x9b, 0x5d, 0xe5};
@@ -66,8 +66,8 @@ pixel giulia::draw_julia(real_t x, real_t y, real_t c_x, real_t c_y, unsigned in
 
 	color *= intensity_factor;
 
-	real x_factor = exp(-square(d.Re()) / 4);
-	real y_factor = exp(-square(d.Im()) / 1);
+	real x_factor = exp(-square(x) / 4);
+	real y_factor = exp(-square(y) / 1);
 
 	color *= x_factor * y_factor;
 
@@ -92,7 +92,6 @@ pixel giulia::draw_mandelbrot(real_t x, real_t y, unsigned int max_iter) {
 	unsigned int i = 0;
 
 	while(z.square_modulus() < (R * R) && i <= max_iter) {
-
 		z = square(z) + c;
 		i++;
 	}
@@ -101,22 +100,19 @@ pixel giulia::draw_mandelbrot(real_t x, real_t y, unsigned int max_iter) {
 	real iter_factor = i / (real) max_iter;
 
 	// Smooth intensity factor
-	real intensity_factor = (i - ln(ln(z.modulus()) / ln(R)) / LN2) / (real) max_iter;
-
-	// Pixel color
-	vec3 color = {0x9b, 0x5d, 0xe5};
+	real intensity_factor = (i - ln(0.5 * ln(z.square_modulus()) / ln(R)) / LN2) / (real) max_iter;
 	real brightness = 0.04 * max_iter;
 
-	return pixel(
-		clamp(color[0] * brightness * intensity_factor, 0, 255),
-		clamp(color[1] * brightness * intensity_factor, 0, 255),
-		clamp(color[2] * brightness * intensity_factor, 0, 255));
+	unsigned char res = clamp(255 * brightness * intensity_factor, 0, 255);
+
+	// Gray scale result
+	return pixel(res, res, res);
 }
 
 
 pixel giulia::draw_mandelbar(real_t x, real_t y, unsigned int max_iter) {
 
-	complex z = complex(0, 0);
+	complex z = complex(x, y);
 	complex c = complex(x, y);
 
 	// Escape radius
@@ -126,7 +122,6 @@ pixel giulia::draw_mandelbar(real_t x, real_t y, unsigned int max_iter) {
 	unsigned int i = 0;
 
 	while(z.square_modulus() < (R * R) && i <= max_iter) {
-
 		z = square(z.conjugate()) + c;
 		i++;
 	}
@@ -135,15 +130,42 @@ pixel giulia::draw_mandelbar(real_t x, real_t y, unsigned int max_iter) {
 	real iter_factor = i / (real) max_iter;
 
 	// Smooth intensity factor
-	real intensity_factor = (i - ln(ln(z.modulus()) / ln(R)) / LN2) / (real) max_iter;
-
-	// Pixel color
-	vec3 color = {0x9b, 0x5d, 0xe5};
+	real intensity_factor = (i - ln(0.5 * ln(z.square_modulus()) / ln(R)) / LN2) / (real) max_iter;
 	real brightness = 0.04 * max_iter;
 
-	return pixel(
-		clamp(color[0] * brightness * intensity_factor, 0, 255),
-		clamp(color[1] * brightness * intensity_factor, 0, 255),
-		clamp(color[2] * brightness * intensity_factor, 0, 255));
+	unsigned char res = clamp(255 * brightness * intensity_factor, 0, 255);
+
+	// Gray scale result
+	return pixel(res, res, res);
+
+}
+
+
+pixel giulia::draw_fractal(real_t x, real_t y, fractal_map f, real_t R, unsigned int max_iter) {
+
+	real_t z_a = x;
+	real_t z_b = y;
+
+	// Number of iterations
+	unsigned int i = 0;
+
+	while((z_a * z_a + z_b * z_b) < (R * R) && i <= max_iter) {
+		auto z_i = f(z_a, z_b);
+		z_a = z_i[0];
+		z_b = z_i[1];
+		i++;
+	}
+
+	// Normalized iteration factor
+	real iter_factor = i / (real) max_iter;
+
+	// Smooth intensity factor
+	real intensity_factor = (i - ln(0.5 * ln(z_a * z_a + z_b * z_b) / ln(R)) / LN2) / (real) max_iter;
+	real brightness = 0.04 * max_iter;
+
+	unsigned char res = clamp(255 * brightness * intensity_factor, 0, 255);
+
+	// Gray scale result
+	return pixel(res, res, res);
 
 }
