@@ -6,9 +6,9 @@
 #ifndef THEORETICA_PRNG_H
 #define THEORETICA_PRNG_H
 
-#include "../core/error.h"
-#include "./pseudorandom.h"
 #include <vector>
+#include "./pseudorandom.h"
+#include "../core/error.h"
 
 
 namespace theoretica {

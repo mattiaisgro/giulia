@@ -105,7 +105,7 @@ int main(int argc, char const *argv[]) {
 		// The origin corresponds to the center of the image
 
 		// Draw pixel
-		img[i] = supersampling(x, y, state, draw, state["supersampling"], 0.5 / state["width"]);
+		img[i] = supersampling(x, y, state, draw, state["supersampling"]);
 	}
 
 	std::cout << "[100%]" << std::endl;

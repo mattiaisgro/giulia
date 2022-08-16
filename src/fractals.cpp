@@ -6,7 +6,7 @@
 using namespace theoretica;
 using namespace giulia;
 
-#include <iostream>
+#include <ctime>
 
 
 pixel giulia::draw_julia(real_t x, real_t y, real_t c_x, real_t c_y, unsigned int max_iter) {
@@ -168,4 +168,27 @@ pixel giulia::draw_fractal(real_t x, real_t y, fractal_map f, real_t R, unsigned
 	// Gray scale result
 	return pixel(res, res, res);
 
+}
+
+
+void giulia::draw_sierpinski_triangle(
+	image& img, real_t x, real_t y, real_t width, unsigned int iter, pixel c) {
+
+	PRNG g = PRNG::wyrand(time(nullptr));
+
+	vec2 A[3];
+	A[0] = {x, y};
+	A[1] = {x + width, y};
+	A[2] = {x + width / 2.0, y + (width * SQRT2 / 2.0)};
+
+	vec2 P = A[g() % 3];
+
+	overwrite(img, A[0][0], A[0][1], c);
+	overwrite(img, A[1][0], A[1][1], c);
+	overwrite(img, A[2][0], A[2][1], c);
+
+	for (size_t i = 0; i < iter; ++i) {
+		P = (P + A[g() % 3]) / 2.0;
+		overwrite(img, P[0], P[1], c);
+	}
 }

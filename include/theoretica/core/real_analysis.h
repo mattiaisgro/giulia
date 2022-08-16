@@ -436,7 +436,7 @@ namespace theoretica {
 			i++;
 
 		// Domain reduction to [1, 2]
-		x /= static_cast<real>(1 << i);
+		x /= (1 << i);
 
 		// Use a polynomial approximation of log2(x)
 		// in [1, 2] to compute the logarithm of the
@@ -456,7 +456,7 @@ namespace theoretica {
 							+ x * (-0.176734 + x * (0.0144404 * x)))))));
 		}
 
-		return static_cast<real>(i) + lr;
+		return i + lr;
 #endif
 	}
 
@@ -530,34 +530,118 @@ namespace theoretica {
 	template<typename T = real>
 	TH_CONSTEXPR inline T pow(T x, int n) {
 
-		T res = T(0);
-		T x2 = x * x;
-		int i = 1;
-
 		if(n > 0) {
 
-			res = x;
+			T res = x;
+			T x_sqr = x * x;
+			int i = 1;
 
-			for(; i < (n / 2); i += 2)
-				res *= x2;
+			// Self-multiply up to biggest power of 2
+			while ((i * 2) <= n) {
+				res = res * res;
+				i *= 2;
+			}
 
-			for(; i < n; ++i)
-				res *= x;
+			// Multiply by x^2 for remaining even power
+			for (; i < (n - 1); i += 2)
+				res = res * x_sqr;
+
+			// Multiply for remaining powers
+			for (; i < n; ++i)
+				res = res * x;
+
+			return res;
 
 		} else if(n < 0) {
-
-			res = 1 / x;
-
-			for(; i < (n / 2); i += 2)
-				res /= x2;
-
-			for(; i < -n; ++i)
-				res /= x;
+			return 1.0 / pow(x, -n);
 		} else {
-			return static_cast<T>(1.0);
+			return 1;
 		}
+	}
+
+
+	/// Compute the factorial of n
+	template<typename IntType = unsigned long long int>
+	TH_CONSTEXPR inline IntType fact(unsigned int n) {
+
+		IntType res = 1;
+		for (int i = n; i > 1; --i)
+			res *= i;
 
 		return res;
+	}
+
+
+#ifdef THEORETICA_X86
+
+	/// Approximate \f$e^x\f$ using x86 Assembly instructions
+	/// in the domain [0, 1]
+	inline real exp_x86_norm(real x) {
+
+		// e^x is computed as 2^(x / ln2)
+		return square(f2xm1(x / (2 * LN2)) + 1);
+	}
+
+#endif
+
+
+	/// Compute \f$e^x\f$
+	/// @param x A real number
+	/// @return The exponential of x
+	///
+	/// The exponential is computed as \f$e^{floor(x)} e^{fract(x)}\f$,
+	/// where \f$e^{floor(x)} = pow(e, floor(x))\f$ and \f$e^{fract(x)}\f$
+	/// is either approximated using Taylor series on [0, 0.5] or,
+	/// if `THEORETICA_X86` is defined, using the `f2xm1` x86 assembly instruction.
+	inline real exp(real x) {
+
+	// Domain reduction to [0, +inf]
+	if(x < 0)
+		return 1.0 / exp(-x);
+
+	const real fract_x = fract(x);
+	const int floor_x = floor(x);
+
+#ifdef THEORETICA_X86
+
+		return pow(E, floor_x) * exp_x86_norm(fract_x);
+
+#else
+
+	// Taylor series expansion
+	// Compute e^floor(x) * e^fract(x)
+	
+	real res = 1;
+	real s_n = 1;
+
+	for (int i = 1; i < TAYLOR_ORDER; ++i) {
+
+		// Recurrence formula to improve
+		// numerical stability and performance
+		s_n *= fract_x / (i * 4);
+		res += s_n;
+	}
+
+	// The fractional part is divided by 4 to improve convergence
+	const real sqr_r = res * res;
+	return pow(E, floor_x) * sqr_r * sqr_r;
+
+#endif
+	}
+
+
+	/// Approximate x elevated to a real exponent
+	/// @param x A real number
+	/// @param a A real exponent
+	///
+	/// Approximated as \f$e^{a ln(|x|) sgn(x)}\f$
+	inline real powf(real x, real a) {
+
+		if(a < 0)
+			return 1.0 / exp(-a * ln(abs(x)) * sgn(x));
+
+		// x^a = e^(a * ln(x))
+		return exp(a * ln(abs(x)) * sgn(x));
 	}
 
 
@@ -569,6 +653,12 @@ namespace theoretica {
 	/// The Newton-Raphson method is used, limited by the
 	/// `THEORETICA_MAX_NEWTON_ITER` macro constant.
 	inline real root(real x, int n) {
+
+#ifdef THEORETICA_X86
+
+		return powf(x, 1 / (real) n);
+
+#else
 
 		if(((n % 2 == 0) && (x < 0)) || (n == 0)) {
 			TH_MATH_ERROR("root", n, OUT_OF_DOMAIN);
@@ -600,88 +690,7 @@ namespace theoretica {
 		}
 
 		return y;
-	}
-
-
-	/// Compute the factorial of n
-	template<typename IntType = unsigned long long int>
-	TH_CONSTEXPR inline IntType fact(unsigned int n) {
-
-		IntType res = 1;
-		for (int i = n; i > 1; --i)
-			res *= i;
-
-		return res;
-	}
-
-
-#ifdef THEORETICA_X86
-
-	/// Approximate \f$e^x\f$ using x86 Assembly instructions
-	/// in the domain [0, 1]
-	inline real exp_x86_norm(real x) {
-
-		// e^x is calculated as 2^(x / ln2)
-		return square(f2xm1(x / (2 * LN2)) + 1);
-	}
-
 #endif
-
-
-	/// Compute \f$e^x\f$
-	/// @param x A real number
-	/// @return The exponential of x
-	///
-	/// The exponential is computed as \f$e^{floor(x)} e^{fract(x)}\f$,
-	/// where \f$e^{floor(x)} = pow(e, floor(x))\f$ and \f$e^{fract(x)}\f$
-	/// is either approximated using Taylor series on [0, 0.5] or,
-	/// if `THEORETICA_X86` is defined, using the `f2xm1` x86 assembly instruction.
-	inline real exp(real x) {
-
-	// Domain reduction to [0, +inf]
-	if(x < 0)
-		return 1.0 / exp(abs(x));
-
-	real fract_x = fract(x);
-
-#ifdef THEORETICA_X86
-
-		return pow(E, floor(x)) * exp_x86_norm(fract_x);
-
-#else
-
-	// Taylor series expansion
-	// Compute e^floor(x) * e^fract(x)
-	
-	real res = 1;
-	real s_n = 1;
-
-	for (int i = 1; i < 9; ++i) {
-
-		// Recurrence formula to improve
-		// numerical stability and performance
-		s_n *= (fract_x / 2.0) / static_cast<real>(i);
-		res += s_n;
-	}
-
-	return pow(E, floor(x)) * res * res;
-
-#endif
-	}
-
-
-	/// Approximate x elevated to a
-	/// @param x A real number
-	/// @return a A real exponent
-	///
-	/// Approximated as \f$e^{a ln(|x|) sgn(x)}\f$
-	inline real powf(real x, real a) {
-
-		if(a < 0)
-			return 1.0 / exp(-a * ln(abs(x)) * sgn(x));
-
-		// x^a = e^(a * ln(x))
-		return exp(a * ln(abs(x)) * sgn(x));
 	}
 
 
@@ -709,28 +718,23 @@ namespace theoretica {
 #else
 
 		// Clamp x between -2PI and 2PI
-		while(x >= 2 * PI)
-			x -= 2 * PI;
-		
-		while(x <= -2 * PI)
-			x += 2 * PI;
+		if(abs(x) >= TAU)
+			x -= floor(x / TAU) * TAU;
 
 		// Domain reduction to [-PI, PI]
-		if(x > PI) {
+		if(x > PI)
 			x = PI - x;
-		} else if(x < -PI) {
+		else if(x < -PI)
 			x = -PI - x;
-		}
 
-		real res = 0;
+		// Compute series with recurrence formula
+		real res = x;
+		real s = x;
+		const real sqr_x = x * x;
 
-		// Taylor series expansion
-		// sin(x) = sum( (-1)^i * x^(2i+1) / (2i+1)! )
-
-		for (int i = 0; i < TAYLOR_ORDER; ++i) {
-			res += (i % 2 == 0 ? 1 : -1)
-				* pow(x, 2 * i + 1)
-				/ static_cast<real>(fact(2 * i + 1));
+		for (int i = 1; i < TAYLOR_ORDER; ++i) {
+			s = s * -sqr_x / (4 * i * i + 2 * i);
+			res += s;
 		}
 
 		return res;
@@ -790,7 +794,7 @@ namespace theoretica {
 		c = cos(x);
 #endif
 
-		if(c == 0) {
+		if(abs(c) < MACH_EPSILON) {
 			TH_MATH_ERROR("tan", c, DIV_BY_ZERO);
 			return nan();
 		}
@@ -824,7 +828,7 @@ namespace theoretica {
 		c = cos(x);
 #endif
 
-		if(s == 0) {
+		if(abs(s) < MACH_EPSILON) {
 			TH_MATH_ERROR("cot", s, DIV_BY_ZERO);
 			return nan();
 		}
@@ -846,35 +850,7 @@ namespace theoretica {
 		if(abs(x) > 1.0)
 			return (PI2 - atan(1.0 / abs(x))) * sgn(x);
 
-		// Finite differences method for arctangent approximation
-
-		// real res;
-		// real x_n;
-		// const real dx = 0.0000001;
-
-		// if(abs(x) > 0.5) {
-
-		// 	x_n = 1;
-		// 	res = 0.7853981636472042; // atan(1)
-
-		// 	while (x_n > abs(x)) {
-		// 		res -= dx * (1 / (square(x_n) + 1));
-		// 		x_n -= dx;
-		// 	}
-		// } else {
-
-		// 	x_n = 0;
-		// 	res = 0; // atan(0)
-
-		// 	while (x_n < abs(x)) {
-		// 		res += dx * (1 / (square(x_n) + 1));
-		// 		x_n += dx;
-		// 	}
-		// }
-
-		// return sgn(x) * res;
-
-		real x2 = x * x;
+		const real x2 = x * x;
 
 		// Interpolating Chebyshev polynomial
 		// of order 9
@@ -908,8 +884,8 @@ namespace theoretica {
 	/// @return The arccosine of x
 	///
 	/// Domain: [-1, 1].
-	/// The identities \f$asin(x) = atan(\frac{sqrt{1 - x^2}{x}})\f$ and
-	/// \f$asin(x) = atan(\frac{\sqrt{1 - x^2}{x}}) + \pi\f$ are used.
+	/// The identities \f$acos(x) = atan(\frac{sqrt{1 - x^2}}{x})\f$ and
+	/// \f$acos(x) = atan(\frac{\sqrt{1 - x^2}}{x}) + \pi\f$ are used.
 	inline real acos(real x) {
 
 		if(abs(x) > 1) {
@@ -991,6 +967,36 @@ namespace theoretica {
 	}
 
 
+	/// Compute the inverse hyperbolic sine
+	inline real asinh(real x) {
+		return ln(x + sqrt(square(x) + 1));
+	}
+
+
+	/// Compute the inverse hyperbolic cosine
+	inline real acosh(real x) {
+
+		if(x < 1) {
+			TH_MATH_ERROR("acosh", x, OUT_OF_DOMAIN);
+			return nan();
+		}
+
+		return ln(x + sqrt(square(x) - 1));
+	}
+
+
+	/// Compute the inverse hyperbolic tangent
+	inline real atanh(real x) {
+
+		if(x < -1 || x > 1) {
+			TH_MATH_ERROR("atanh", x, OUT_OF_DOMAIN);
+			return nan();
+		}
+
+		return 0.5 * ln((x + 1) / (1 - x));
+	}
+
+
 	/// Compute the sigmoid function
 	/// @param x A real number
 	/// @return The sigmoid function for x defined as
@@ -1006,9 +1012,8 @@ namespace theoretica {
 	/// \f$\frac{sin(\pi x)}{\pi x}\f$
 	inline real sinc(real x) {
 
-		if(abs(x) <= MACH_EPSILON) {
+		if(abs(x) <= MACH_EPSILON)
 			return 1;
-		}
 
 		return sin(PI * x) / (PI * x);
 	}
@@ -1020,9 +1025,8 @@ namespace theoretica {
 	/// to 1 if x > 0, 0 if x < 0 and 1/2 if x = 0
 	inline real heaviside(real x) {
 
-		if(abs(x) < MACH_EPSILON) {
+		if(abs(x) < MACH_EPSILON)
 			return 0.5;
-		}
 
 		return x > 0 ? 1 : 0;
 	}

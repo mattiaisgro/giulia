@@ -91,6 +91,10 @@ namespace giulia {
 	using draw_function = std::function<pixel(real_t, real_t, global_state&)>;
 
 
+	// Overwrite a pixel corresponding to the given normalized Cartesian coordinates
+	void overwrite(image& img, real_t x, real_t y, pixel c);
+
+
 	// Save an image to file in the BMP format
 	// Returns 0 on success
 	int save_image(std::string filename, unsigned int width, unsigned int height, pixel* data);

@@ -2,6 +2,7 @@
 
 #define THEORETICA_LONG_DOUBLE_PREC
 #include "theoretica/core/real_analysis.h"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -19,6 +20,18 @@ int giulia::save_image(std::string filename, uint32_t width, uint32_t height, pi
 int giulia::save_image(std::string filename, image img) {
 	
 	return giulia::save_image(filename, img.get_width(), img.get_height(), img.get_data());
+}
+
+
+void giulia::overwrite(image& img, real_t x, real_t y, pixel c) {
+
+	const size_t w = img.get_width();
+	const size_t h = img.get_height();
+	const size_t size = h * w;
+	const real_t aspect_ratio = w / (real_t) h;
+
+	unsigned int i = (unsigned int) (w * x) + w * (unsigned int) (h * (1 - y));
+	img[i] = c;
 }
 
 
@@ -47,7 +60,7 @@ pixel giulia::supersampling(
 		return pixel(0, 0, 0);
 
 	if(stepsize == 0)
-		stepsize = 1.0 / state["width"];
+		stepsize = 0.25 / state["width"];
 
 	// Grid pattern
 	const real_t x1 = x + (stepsize);

@@ -22,4 +22,10 @@ namespace giulia {
 	// Draw a fractal map
 	pixel draw_fractal(real_t x, real_t y, fractal_map f, real_t R = 2, unsigned int max_iter = 1000);
 
+	// Draw a Sierpinski triangle
+	void draw_sierpinski_triangle(
+		image& img, real_t x, real_t y,
+		real_t width, unsigned int iter = 1000000,
+		pixel c = pixel(255, 255, 255));
+
 }
