@@ -23,6 +23,12 @@ namespace giulia {
 		pixel(unsigned char r, unsigned char g, unsigned char b)
 			: r(r), g(g), b(b) {}
 
+		pixel(unsigned int hex) {
+			r = (hex & 0x00FF0000) >> 16;
+			g = (hex & 0x0000FF00) >> 8;
+			b = hex & 0x000000FF;
+		}
+
 		inline pixel operator+(pixel other) {
 			return pixel(r + other.r, g + other.g, b + other.b);
 		}

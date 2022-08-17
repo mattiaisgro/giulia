@@ -192,3 +192,50 @@ void giulia::draw_sierpinski_triangle(
 		overwrite(img, P[0], P[1], c);
 	}
 }
+
+
+pixel giulia::draw_newton_fractal(real_t x, real_t y,
+	const std::vector<std::array<real_t, 2>>& roots,
+	const std::vector<pixel>& colors, unsigned int max_iter, real_t epsilon) {
+
+	if(roots.size() != colors.size())
+		return pixel(0, 0, 0);
+
+	std::vector<complex> complex_roots;
+	complex_roots.reserve(roots.size());
+
+	for (size_t i = 0; i < roots.size(); ++i)
+		complex_roots.emplace_back(roots[i][0], roots[i][1]);
+
+
+	polynomial<complex> P = polynomial<complex>::from_roots(complex_roots);
+	polynomial<complex> dP = deriv_polynomial(P);
+
+	complex z = complex(x, y);
+	pixel c = pixel(0, 0, 0);
+	unsigned int iter = 0;
+	real dist = inf();
+
+	// Newton's method in the complex plane
+	while(dist > epsilon && iter < max_iter) {
+		z = z - (P(z) / dP(z));
+		dist = P(z).modulus();
+		iter++;
+	}
+
+	real pick_dist = inf();
+
+	// Find the nearest root
+	for (size_t i = 0; i < complex_roots.size(); ++i) {
+
+		const real curr_dist = (z - complex_roots[i]).modulus();
+
+		if(curr_dist < pick_dist) {
+			pick_dist = curr_dist;
+			c = colors[i];
+		}
+	}
+
+	real intensity_factor = 1 - (iter / (real) max_iter);
+	return c * intensity_factor;
+}
