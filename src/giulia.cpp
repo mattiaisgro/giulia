@@ -14,8 +14,8 @@ using namespace giulia;
 // Setup rendering variables
 void setup(global_state& state) {
 
-	state["scale.x"] = 5;
-	state["scale.y"] = 5;
+	state["scale.x"] = 3;
+	state["scale.y"] = 3;
 
 	state["translation.x"] = 0;
 	state["translation.y"] = 0;
@@ -26,12 +26,10 @@ void setup(global_state& state) {
 pixel draw(real_t x, real_t y, global_state& state) {
 
 	// Coordinate transformation
-	x = (x - state["translation.x"]) * state["scale.x"];
-	y = (y - state["translation.y"]) * state["scale.y"];
+	x = (x * state["scale.x"] - state["translation.x"]);
+	y = (y * state["scale.y"] - state["translation.y"]);
 
-	return draw_newton_fractal(x, y,
-		{{1, 0}, {-1, 0}, {0, 0}},
-		{pixel(0xFF4081), pixel(0x3F51B5), pixel(0xFFA000)});
+	return draw_julia(x, y);
 }
 
 

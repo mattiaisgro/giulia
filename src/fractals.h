@@ -12,7 +12,7 @@ namespace giulia {
 
 
 	// Draw a Julia fractal with parameter (c_x, c_y)
-	pixel draw_julia(real_t x, real_t y, real_t c_x, real_t c_y, unsigned int max_iter = 1000);
+	pixel draw_julia(real_t x, real_t y, real_t c_x = -0.76, real_t c_y = 0.1482, unsigned int max_iter = 1000);
 
 
 	// Draw the Mandelbrot fractal
