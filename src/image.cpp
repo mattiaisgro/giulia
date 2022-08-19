@@ -7,6 +7,7 @@
 #include "stb_image_write.h"
 
 using namespace theoretica;
+namespace th = theoretica;
 using namespace giulia;
 
 
@@ -35,18 +36,51 @@ void giulia::overwrite(image& img, real_t x, real_t y, pixel c) {
 }
 
 
+void giulia::negative(image& img) {
+
+	for (size_t i = 0; i < img.get_size(); ++i) {
+		const pixel p = img[i];
+		img[i] = pixel(255 - p.r, 255 - p.g, 255 - p.b);
+	}
+
+}
+
+
+void giulia::gamma_correction(image& img, real_t gamma, real_t c) {
+
+	for (size_t i = 0; i < img.get_size(); ++i) {
+		const pixel p = img[i];
+		img[i] = pixel(c * th::powf(p.r, gamma), c * th::powf(p.g, gamma), c * th::powf(p.b, gamma));
+	}
+
+}
+
+
+void giulia::contrast(image& img, real_t a, unsigned char s) {
+
+	for (size_t i = 0; i < img.get_size(); ++i) {
+		const pixel p = img[i];
+		img[i] = pixel(
+			clamp(a * clamp((unsigned int) p.r - s, 0, 255) + s, 0, 255),
+			clamp(a * clamp((unsigned int) p.g - s, 0, 255) + s, 0, 255),
+			clamp(a * clamp((unsigned int) p.b - s, 0, 255) + s, 0, 255));
+	}
+
+}
+
+
 pixel giulia::lerp(pixel P1, pixel P2, real_t interp) {
 	return (P1 + (P2 - P1) * interp);
 }
 
 
 real_t giulia::intensity(pixel p) {
-	return theoretica::sqrt(square(p.r) + square(p.g) + square(p.b));
+	return th::sqrt(square(p.r) + square(p.g) + square(p.b));
 }
 
 
 pixel giulia::contrast(pixel p, real_t value) {
-	return p * theoretica::powf(intensity(p), value);
+	return p * th::powf(intensity(p), value);
 }
 
 

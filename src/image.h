@@ -81,6 +81,10 @@ namespace giulia {
 				return height;
 			}
 
+			inline unsigned int get_size() const {
+				return width * height;
+			}
+
 			inline pixel& operator[](unsigned int i) {
 				return data[i];
 			}
@@ -101,6 +105,18 @@ namespace giulia {
 	void overwrite(image& img, real_t x, real_t y, pixel c);
 
 
+	// Apply a negative mask to an image
+	void negative(image& img);
+
+
+	// Apply gamma correction to an image
+	void gamma_correction(image& img, real_t gamma, real_t c);
+
+
+	// Apply contrast to an image
+	void contrast(image& img, real_t a, unsigned char s);
+
+
 	// Save an image to file in the BMP format
 	// Returns 0 on success
 	int save_image(std::string filename, unsigned int width, unsigned int height, pixel* data);
@@ -119,7 +135,7 @@ namespace giulia {
 	real_t intensity(pixel p);
 
 
-	// Apply contrast
+	// Apply contrast to pixel
 	pixel contrast(pixel p, real_t value);
 
 

@@ -33,6 +33,14 @@ pixel draw(real_t x, real_t y, global_state& state) {
 }
 
 
+void postprocess(image& img, global_state& state) {
+
+	draw_sierpinski_triangle(img, 0.1, 0.1, 0.3);
+	negative(img);
+	contrast(img, 0.9, 0);
+}
+
+
 int main(int argc, char const *argv[]) {
 
 	// Changing seed
@@ -109,6 +117,10 @@ int main(int argc, char const *argv[]) {
 	}
 
 	std::cout << "[100%]" << std::endl;
+
+	// Post-process the whole image
+	std::cout << "Post-processing ..." << std::endl;
+	postprocess(img, state);
 
 	// Save the result to file
 	std::cout << "Saving image as " << filename << " ..." << std::endl;

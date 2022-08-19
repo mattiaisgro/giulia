@@ -136,6 +136,12 @@ pixel giulia::draw_fractal(real_t x, real_t y, fractal_map f, real_t R, unsigned
 void giulia::draw_sierpinski_triangle(
 	image& img, real_t x, real_t y, real_t width, unsigned int iter, pixel c) {
 
+	if(width == 0) {
+		width = 0.8;
+		x = 0.1;
+		y = 0.5 - SQRT2 * 0.2;
+	}
+
 	PRNG g = PRNG::wyrand(time(nullptr));
 
 	vec2 A[3];
