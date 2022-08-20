@@ -35,9 +35,10 @@ pixel draw(real_t x, real_t y, global_state& state) {
 
 void postprocess(image& img, global_state& state) {
 
-	draw_sierpinski_triangle(img, 0.1, 0.1, 0.3);
+	draw_sierpinski_triangle(img, 0.1, 0.1, 0.3, 1000000, pixel(0xFF0000));
 	negative(img);
 	contrast(img, 0.9, 0);
+	grayscale(img);
 }
 
 

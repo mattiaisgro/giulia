@@ -46,6 +46,17 @@ void giulia::negative(image& img) {
 }
 
 
+void giulia::grayscale(image& img) {
+
+	for (size_t i = 0; i < img.get_size(); ++i) {
+		const pixel p = img[i];
+		const unsigned char g = intensity(p) / SQRT3;
+		img[i] = pixel(g, g, g);
+	}
+
+}
+
+
 void giulia::gamma_correction(image& img, real_t gamma, real_t c) {
 
 	for (size_t i = 0; i < img.get_size(); ++i) {
@@ -64,6 +75,37 @@ void giulia::contrast(image& img, real_t a, unsigned char s) {
 			clamp(a * clamp((unsigned int) p.r - s, 0, 255) + s, 0, 255),
 			clamp(a * clamp((unsigned int) p.g - s, 0, 255) + s, 0, 255),
 			clamp(a * clamp((unsigned int) p.b - s, 0, 255) + s, 0, 255));
+	}
+
+}
+
+
+void giulia::contrast_stretch(image& img,
+		unsigned char min_in, unsigned char max_in,
+		unsigned char min_out, unsigned char max_out) {
+
+	unsigned char diff_in = max_in - min_in;
+	unsigned char diff_out = max_out - min_out;
+
+	for (size_t i = 0; i < img.get_size(); ++i) {
+		const pixel p = img[i];
+		img[i] = pixel(
+			clamp(((real) p.r - min_in) * diff_out / diff_in + min_out, 0, 255),
+			clamp(((real) p.g - min_in) * diff_out / diff_in + min_out, 0, 255),
+			clamp(((real) p.b - min_in) * diff_out / diff_in + min_out, 0, 255));
+	}
+
+}
+
+
+void giulia::log(image& img, real_t c) {
+
+	for (size_t i = 0; i < img.get_size(); ++i) {
+		const pixel p = img[i];
+		img[i] = pixel(
+			clamp(c * th::ln(real(p.r) + 1), 0, 255), 
+			clamp(c * th::ln(real(p.g) + 1), 0, 255), 
+			clamp(c * th::ln(real(p.b) + 1), 0, 255));
 	}
 
 }

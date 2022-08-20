@@ -109,6 +109,10 @@ namespace giulia {
 	void negative(image& img);
 
 
+	// Apply a gray scale mask to an image
+	void grayscale(image& img);
+
+
 	// Apply gamma correction to an image
 	void gamma_correction(image& img, real_t gamma, real_t c);
 
@@ -116,6 +120,15 @@ namespace giulia {
 	// Apply contrast to an image
 	void contrast(image& img, real_t a, unsigned char s);
 
+
+	// Apply contrast stretching to an image
+	void contrast_stretch(image& img,
+		unsigned char min_in, unsigned char max_in,
+		unsigned char min_out, unsigned char max_out);
+
+
+	// Apply logarithmic transformation to an image
+	void log(image& img, real_t c);
 
 	// Save an image to file in the BMP format
 	// Returns 0 on success
