@@ -920,9 +920,9 @@ namespace theoretica {
 		}
 
 		if(x > 0) {
-			return sgn(y) * atan(y / x);
+			return atan(y / x);
 		} else {
-			return sgn(y) * atan(y / -x) + PI2;
+			return atan(y / x) + PI2;
 		}
 	}
 

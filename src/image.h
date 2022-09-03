@@ -52,6 +52,7 @@ namespace giulia {
 
 		public:
 
+			// Construct an image of width <w> and height <h>
 			image(unsigned int w, unsigned int h) : width(w), height(h) {
 
 				if(data.size())
@@ -60,34 +61,38 @@ namespace giulia {
 				data.resize(w * h);
 			}
 
-			inline pixel* get_data() const {
-				return (pixel*) &(data[0]);
-			}
 
-			inline pixel get_pixel(unsigned int i) const {
-				return data[i];
-			}
-
-			inline pixel get_pixel(unsigned int i, unsigned int j) const {
-				return data[width * j + i];
-			}
-
-			inline unsigned int get_width() const {
-				return width;
-			}
+			// Get raw pointer to image data
+			pixel* get_data() const;
 
 
-			inline unsigned int get_height() const {
-				return height;
-			}
+			// Get the pixel at index <i>
+			pixel get_pixel(unsigned int i) const;
 
-			inline unsigned int get_size() const {
-				return width * height;
-			}
 
-			inline pixel& operator[](unsigned int i) {
-				return data[i];
-			}
+			// Get the pixel at horizontal index <i> and vertical index <j>
+			pixel get_pixel(unsigned int i, unsigned int j) const;
+
+
+			// Get width of the image
+			unsigned int get_width() const;
+
+
+			// Get height of the image
+			unsigned int get_height() const;
+
+
+			// Get total pixel size of the image
+			unsigned int get_size() const;
+
+
+			// Get pixel at index <i>
+			// @see get_pixel(unsigned int)
+			pixel& operator[](unsigned int i);
+
+
+			// Save image to file as a Bitmap
+			int save(const std::string& filename);
 
 
 		private:
@@ -99,6 +104,14 @@ namespace giulia {
 
 	// A pixel drawing function
 	using draw_function = std::function<pixel(real_t, real_t, global_state&)>;
+
+
+	// Apply a pixel modification to an image
+	void apply(image& img, std::function<pixel(pixel)> f);
+
+
+	// Apply a series of pixel modifications to an image
+	void apply(image& img, std::vector<std::function<pixel(pixel)>> functions);
 
 
 	// Overwrite a pixel corresponding to the given normalized Cartesian coordinates
@@ -121,6 +134,10 @@ namespace giulia {
 	void contrast(image& img, real_t a, unsigned char s);
 
 
+	// Apply contrast thresholding to an image
+	void contrast_threshold(image& img, real_t t);
+
+
 	// Apply contrast stretching to an image
 	void contrast_stretch(image& img,
 		unsigned char min_in, unsigned char max_in,
@@ -129,15 +146,6 @@ namespace giulia {
 
 	// Apply logarithmic transformation to an image
 	void log(image& img, real_t c);
-
-	// Save an image to file in the BMP format
-	// Returns 0 on success
-	int save_image(std::string filename, unsigned int width, unsigned int height, pixel* data);
-
-
-	// Save an image to file in the BMP format
-	// Returns 0 on success
-	int save_image(std::string filename, image img);
 
 
 	// Linear interpolation between pixels

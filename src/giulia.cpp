@@ -1,9 +1,8 @@
-
 #include "common.h"
 #include "image.h"
 #include "fractals.h"
+#include "raymarching.h"
 
-#include <fstream>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -14,8 +13,8 @@ using namespace giulia;
 // Setup rendering variables
 void setup(global_state& state) {
 
-	state["scale.x"] = 3;
-	state["scale.y"] = 3;
+	state["scale.x"] = 4;
+	state["scale.y"] = 4;
 
 	state["translation.x"] = 0;
 	state["translation.y"] = 0;
@@ -25,20 +24,27 @@ void setup(global_state& state) {
 // Draw a pixel at the specified x and y
 pixel draw(real_t x, real_t y, global_state& state) {
 
-	// Coordinate transformation
-	x = (x * state["scale.x"] - state["translation.x"]);
-	y = (y * state["scale.y"] - state["translation.y"]);
+	// Register normalized coordinates before transformation
+	real_t norm_x = x;
+	real_t norm_y = y;
 
-	return draw_julia(x, y);
+	// Coordinate transformation
+	x = (x - state["translation.x"]) * state["scale.x"];
+	y = (y - state["translation.y"]) * state["scale.y"];
+
+	return raymarch(
+		mandelbulb,
+		{x, y, 2}, {0, 0, -1},
+		0.0001, 250, false);
 }
 
 
 void postprocess(image& img, global_state& state) {
 
-	draw_sierpinski_triangle(img, 0.1, 0.1, 0.3, 1000000, pixel(0xFF0000));
-	negative(img);
-	contrast(img, 0.9, 0);
-	grayscale(img);
+	// draw_sierpinski_triangle(img);
+	// negative(img);
+	// contrast(img, 0.9, 0);
+	// grayscale(img);
 }
 
 
@@ -114,7 +120,7 @@ int main(int argc, char const *argv[]) {
 		// The origin corresponds to the center of the image
 
 		// Draw pixel
-		img[i] = supersampling(x, y, state, draw, state["supersampling"]);
+		img[i] = supersampling(x, y, state, draw, state["supersampling"], 0.25 / state["width"]);
 	}
 
 	std::cout << "[100%]" << std::endl;
@@ -125,7 +131,7 @@ int main(int argc, char const *argv[]) {
 
 	// Save the result to file
 	std::cout << "Saving image as " << filename << " ..." << std::endl;
-	int res = save_image(filename, img);
+	int res = img.save(filename);
 
 	if(res)	std::cout << "Failed writing to file" << res << std::endl;
 	else	std::cout << "Successfully saved image" << std::endl;

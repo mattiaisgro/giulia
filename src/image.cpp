@@ -11,16 +11,57 @@ namespace th = theoretica;
 using namespace giulia;
 
 
-int giulia::save_image(std::string filename, uint32_t width, uint32_t height, pixel* data) {
+pixel* giulia::image::get_data() const {
+	return (pixel*) &(data[0]);
+}
+
+pixel giulia::image::get_pixel(unsigned int i) const {
+	return data[i];
+}
+
+pixel giulia::image::get_pixel(unsigned int i, unsigned int j) const {
+	return data[width * j + i];
+}
+
+unsigned int giulia::image::get_width() const {
+	return width;
+}
+
+
+unsigned int giulia::image::get_height() const {
+	return height;
+}
+
+unsigned int giulia::image::get_size() const {
+	return width * height;
+}
+
+pixel& giulia::image::operator[](unsigned int i) {
+	return data[i];
+}
+
+
+int giulia::image::save(const std::string& filename) {
 	
-	int res = stbi_write_bmp(filename.c_str(), width, height, 3, (void*) data);
+	int res = stbi_write_bmp(filename.c_str(), width, height, 3, (void*) get_data());
 	return res ? 0 : -1;
 }
 
 
-int giulia::save_image(std::string filename, image img) {
-	
-	return giulia::save_image(filename, img.get_width(), img.get_height(), img.get_data());
+void apply(image& img, std::function<pixel(pixel)> f) {
+
+	for (size_t i = 0; i < img.get_size(); ++i)
+		img[i] = f(img[i]);
+
+}
+
+
+void apply(image& img, std::vector<std::function<pixel(pixel)>> functions) {
+
+	for (size_t i = 0; i < img.get_size(); ++i)
+		for (int j = 0; j < functions.size(); ++j)
+			img[i] = functions[j](img[i]);
+
 }
 
 
@@ -75,6 +116,20 @@ void giulia::contrast(image& img, real_t a, unsigned char s) {
 			clamp(a * clamp((unsigned int) p.r - s, 0, 255) + s, 0, 255),
 			clamp(a * clamp((unsigned int) p.g - s, 0, 255) + s, 0, 255),
 			clamp(a * clamp((unsigned int) p.b - s, 0, 255) + s, 0, 255));
+	}
+
+}
+
+
+void contrast_threshold(image& img, real_t t) {
+
+	for (size_t i = 0; i < img.get_size(); ++i) {
+		const pixel p = img[i];
+
+		if(intensity(p) >= t)
+			img[i] = pixel(255, 255, 255);
+		else
+			img[i] = pixel(0, 0, 0);
 	}
 
 }
