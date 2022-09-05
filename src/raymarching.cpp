@@ -82,7 +82,7 @@ de_object giulia::mandelbulb(vec3 pos) {
 
 	for (int i = 0; i < 10; i++) {
 
-		r = z.lenght();
+		r = z.length();
 
 		// Escape radius is 2
 		if (r > 2)

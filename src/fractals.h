@@ -8,7 +8,13 @@
 
 namespace giulia {
 
+
+	// A complex map of the form C^2 -> C^2
 	using fractal_map = std::function<std::array<real_t, 2>(real_t, real_t)>;
+
+
+	// Draw a very special Julia fractal!
+	pixel draw_giulia_present(real_t x, real_t y, unsigned int max_iter = 2500);
 
 
 	// Draw a Julia fractal with parameter (c_x, c_y)
