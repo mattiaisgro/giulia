@@ -1,11 +1,13 @@
 #include "raymarching.h"
+#include "theoretica/interpolation/spline_interp.h"
+
 using namespace giulia;
 using namespace theoretica;
 namespace th = theoretica;
 
 
 pixel giulia::raymarch(
-	std::function<de_object(vec3)> DE, vec3 camera, vec3 direction,
+	SDF f, vec3 camera, vec3 direction, pixel background,
 	real min_distance, unsigned int max_steps, bool lighting) {
 
 
@@ -21,7 +23,7 @@ pixel giulia::raymarch(
 		pos = camera + direction * tot_distance;
 
 		// Compute another step of distance estimation
-		obj = DE(pos);
+		obj = f(pos);
 		tot_distance += obj.distance;
 		obj.position = pos;
 
@@ -33,36 +35,41 @@ pixel giulia::raymarch(
 			break;
 	}
 
+	// Set the distance of the object to the total computed distance
 	obj.distance = tot_distance;
 
 	if(i == max_steps) {
 
-		// TO-DO Apply glow or soft border
-		// float border_gradient = (1 - minimum * 5);
+		// Soft border
+		// real border_gradient = (1 - minimum * 10);
 		// obj.color = pixel(
 		// 	clamp(obj.color.r * border_gradient, 0, 255),
 		// 	clamp(obj.color.g * border_gradient, 0, 255),
 		// 	clamp(obj.color.b * border_gradient, 0, 255)
 		// );
 
-		obj.color = pixel(0, 0, 0);
+		obj.color = background;
 
 	} else {
 
-		real coeff = pow(1 - i / (real) max_steps, 10);
+		// Simple ambient occlusion
+		real coeff = square(1 - i / (real) max_steps);
+		
 		obj.color = pixel(
-			clamp(coeff * obj.color.r, 0, 255),
-			clamp(coeff * obj.color.g, 0, 255),
-			clamp(coeff * obj.color.b, 0, 255)
+			clamp(obj.color.r * coeff, 0, 255),
+			clamp(obj.color.g * coeff, 0, 255),
+			clamp(obj.color.b * coeff, 0, 255)
 		);
 
 		// Finite differences method for normal approximation
 		if(lighting) {
+
 			obj.normal = vec3({
-				DE(pos + vec3({1, 0, 0})).distance - DE(pos - vec3({1, 0, 0})).distance,
-				DE(pos + vec3({0, 1, 0})).distance - DE(pos - vec3({0, 1, 0})).distance,
-				DE(pos + vec3({0, 0, 1})).distance - DE(pos - vec3({0, 0, 1})).distance
+				f(pos + vec3({1, 0, 0})).distance - f(pos - vec3({1, 0, 0})).distance,
+				f(pos + vec3({0, 1, 0})).distance - f(pos - vec3({0, 1, 0})).distance,
+				f(pos + vec3({0, 0, 1})).distance - f(pos - vec3({0, 0, 1})).distance
 			}).normalized();
+
 		} else {
 			obj.normal = {0, 0, 0};
 		}
@@ -72,12 +79,69 @@ pixel giulia::raymarch(
 }
 
 
+de_object giulia::sdf::obj_union(de_object a, de_object b) {
 
-de_object giulia::mandelbulb(vec3 pos) {
+	return (a.distance < b.distance) ? a : b;
+}
+
+
+de_object giulia::sdf::obj_union(std::vector<de_object> v) {
+
+	if(!v.size())
+		return de_object(0, pixel(0));
+
+	real m = v[0].distance;
+	unsigned int index = 0;
+
+	for (unsigned int i = 0; i < v.size(); ++i) {
+		if(v[i].distance < m) {
+			m = v[i].distance;
+			index = i;
+		}
+	}
+
+	return v[index];
+}
+
+
+de_object giulia::sdf::obj_blend(de_object a, de_object b, real k) {
+
+	real h = clamp(0.5 + 0.5 * (a.distance - b.distance) / k, 0.0, 1.0);
+	
+    return de_object(
+    	th::lerp(a.distance, b.distance, h) - k * h * (1.0 - h),
+		pixel(
+			a.color.r + ((int) b.color.r - a.color.r) * h,
+			a.color.g + ((int) b.color.g - a.color.g) * h,
+			a.color.b + ((int) b.color.b - a.color.b) * h
+		));
+}
+
+
+de_object giulia::sdf::obj_intersection(de_object a, de_object b) {
+
+	return (a.distance > b.distance) ? a : b;
+}
+
+
+de_object giulia::sdf::obj_difference(de_object a, de_object b) {
+
+	return (-a.distance > b.distance) ? a : b;
+}
+
+
+
+de_object giulia::sdf::sphere(vec3 pos, vec3 center, real radius, pixel color) {
+
+	return de_object((pos - center).length() - radius, color);
+}
+
+
+de_object giulia::sdf::mandelbulb(vec3 pos) {
 
 	vec3 z = pos;
-	real dr = 1.0;
-	real r = 0.0;
+	real dr = 1;
+	real r = 0;
 	int power = 8;
 
 	for (int i = 0; i < 10; i++) {
@@ -99,11 +163,13 @@ de_object giulia::mandelbulb(vec3 pos) {
 		const real zr = r_pow_1 * r;
 		theta = theta * power;
 		phi = phi * power;
+
+		const real sin_theta = th::sin(theta);
 		
 		// Cartesian coordinates
 		z = zr * vec3({
-			th::sin(theta) * th::cos(phi),
-			th::sin(theta) * th::sin(phi),
+			sin_theta * th::cos(phi),
+			sin_theta * th::sin(phi),
 			th::cos(theta)});
 
 		z += pos;
