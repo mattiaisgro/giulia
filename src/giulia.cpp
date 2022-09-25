@@ -33,7 +33,7 @@ pixel draw(real_t x, real_t y, global_state& state) {
 	y = (y - state["translation.y"]) * state["scale.y"];
 
 	return raymarch(
-		mandelbulb,
+		sdf::mandelbulb,
 		{x, y, 2}, {0, 0, -1},
 		0.0001, 250, false);
 }
