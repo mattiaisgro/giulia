@@ -1,7 +1,12 @@
+
+#define THEORETICA_LONG_DOUBLE_PREC
+#include "theoretica/theoretica.h"
+
 #include "common.h"
 #include "image.h"
 #include "fractals.h"
 #include "raymarching.h"
+#include "geometry.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -13,8 +18,8 @@ using namespace giulia;
 // Setup rendering variables
 void setup(global_state& state) {
 
-	state["scale.x"] = 4;
-	state["scale.y"] = 4;
+	state["scale.x"] = 10;
+	state["scale.y"] = 10;
 
 	state["translation.x"] = 0;
 	state["translation.y"] = 0;
@@ -29,18 +34,33 @@ pixel draw(real_t x, real_t y, global_state& state) {
 	real_t norm_y = y;
 
 	// Coordinate transformation
-	x = (x - state["translation.x"]) * state["scale.x"];
-	y = (y - state["translation.y"]) * state["scale.y"];
+	x = (x * state["scale.x"]) - state["translation.x"];
+	y = (y * state["scale.y"]) - state["translation.y"];
 
-	return raymarch(
-		mandelbulb,
-		{x, y, 2}, {0, 0, -1},
-		0.0001, 250, false);
+	// Perspective
+	vec3 camera = {0, 0, 0};
+	vec3 direction = {norm_x, norm_y, -1};
+	direction.normalize();
+
+	pixel output = raymarch(
+		[](vec3 pos) {
+
+			return sdf::obj_blend(
+				sdf::obj_blend(
+					sdf::sphere(pos, {-1, 0, -6}, 1, pixel(0xFA0A0A)),
+					sdf::sphere(pos, {1, 1, -7}, 1.5, pixel(0x0AFA0A)),
+					0.7
+				),
+				sdf::sphere(pos, {-1, -1.5, -5.8}, 0.75, pixel(0x0A0AFA)),
+				0.5);
+
+		}, camera, direction);
+
+	return output;
 }
 
 
 void postprocess(image& img, global_state& state) {
-
 	// draw_sierpinski_triangle(img);
 	// negative(img);
 	// contrast(img, 0.9, 0);

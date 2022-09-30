@@ -112,6 +112,25 @@ namespace theoretica {
 	}
 
 
+	/// Compute the Minkowski distance between two vectors
+	template<typename Vector>
+	inline real minkowski_distance(Vector v1, Vector v2, unsigned int p) {
+
+		if(v1.size() != v2.size()) {
+			TH_MATH_ERROR("minkowski_distance", v1.size(), INVALID_ARGUMENT);
+			return nan();
+		}
+
+		return lp_norm(v1 - v2, p);
+	}
+
+
+	/// Compute the Euclidian distance between two values
+	inline real minkowski_distance(real a, real b, unsigned int p) {
+		return root(pow(abs(b - a), p), p);
+	}
+
+
 	/// Compute the Hermitian distance between two vectors
 	template<typename Vector>
 	inline complex hermitian_distance(Vector v1, Vector v2) {
@@ -170,7 +189,7 @@ namespace theoretica {
 	inline real discrete_distance(Vector v1, Vector v2, real tolerance = MACH_EPSILON) {
 
 		if(v1.size() != v2.size()) {
-			TH_MATH_ERROR("chebyshev_distance", v1.size(), INVALID_ARGUMENT);
+			TH_MATH_ERROR("discrete_distance", v1.size(), INVALID_ARGUMENT);
 			return nan();
 		}
 
@@ -187,6 +206,53 @@ namespace theoretica {
 		}
 
 		return diff ? 1 : 0;
+	}
+
+
+	/// Compute the Canberra distance between two vectors
+	template<typename Vector>
+	inline real canberra_distance(Vector v1, Vector v2) {
+
+		if(v1.size() != v2.size()) {
+			TH_MATH_ERROR("canberra_distance", v1.size(), INVALID_ARGUMENT);
+			return nan();
+		}
+
+		real sum = 0;
+
+		for (size_t i = 0; i < v1.size(); ++i)
+			sum += abs(v1[i] - v2[i]) / (abs(v1[i]) + abs(v2[i]));
+
+		return sum;
+	}
+
+
+	/// Compute the cosine distance between two vectors
+	template<typename Vector>
+	inline real cosine_distance(Vector v1, Vector v2) {
+
+		if(v1.size() != v2.size()) {
+			TH_MATH_ERROR("cosine_distance", v1.size(), INVALID_ARGUMENT);
+			return nan();
+		}
+
+		const real v1_l = v1.length();
+		const real v2_l = v2.length();
+
+		if(v1_l < MACH_EPSILON) {
+			TH_MATH_ERROR("cosine_distance", v1_l, DIV_BY_ZERO);
+			return nan();
+		}
+
+		if(v2_l < MACH_EPSILON) {
+			TH_MATH_ERROR("cosine_distance", v2_l, DIV_BY_ZERO);
+			return nan();
+		}
+
+		// Computing the sum of v_j[i]^2 may avoid one square root
+		// but the multiplication may yield too big numbers
+
+		return (v1 * v2) / v1_l / v2_l;
 	}
 
 }
