@@ -13,13 +13,14 @@
 #include <ctime>
 
 using namespace giulia;
+using namespace th;
 
 
 // Setup rendering variables
 void setup(global_state& state) {
 
-	state["scale.x"] = 10;
-	state["scale.y"] = 10;
+	state["scale.x"] = 5;
+	state["scale.y"] = 5;
 
 	state["translation.x"] = 0;
 	state["translation.y"] = 0;
@@ -38,25 +39,44 @@ pixel draw(real_t x, real_t y, global_state& state) {
 	y = (y * state["scale.y"]) - state["translation.y"];
 
 	// Perspective
-	vec3 camera = {0, 0, 0};
-	vec3 direction = {norm_x, norm_y, -1};
-	direction.normalize();
+	// vec3 camera = {0, 0, 0};
+	// vec3 direction = {norm_x, norm_y, -1};
+	// direction.normalize();
 
-	pixel output = raymarch(
-		[](vec3 pos) {
+	// pixel output = raymarch(
+	// 	[](vec3 pos) {
 
-			return sdf::obj_blend(
-				sdf::obj_blend(
-					sdf::sphere(pos, {-1, 0, -6}, 1, pixel(0xFA0A0A)),
-					sdf::sphere(pos, {1, 1, -7}, 1.5, pixel(0x0AFA0A)),
-					0.7
-				),
-				sdf::sphere(pos, {-1, -1.5, -5.8}, 0.75, pixel(0x0A0AFA)),
-				0.5);
+	// 		return sdf::obj_blend(
+	// 			sdf::obj_blend(
+	// 				sdf::sphere(pos, {-1, 0, -6}, 1, pixel(0xFA0A0A)),
+	// 				sdf::sphere(pos, {1, 1, -7}, 1.5, pixel(0x0AFA0A)),
+	// 				0.7
+	// 			),
+	// 			sdf::sphere(pos, {-1, -1.5, -5.8}, 0.75, pixel(0x0A0AFA)),
+	// 			0.5);
 
-		}, camera, direction);
+	// 	}, camera, direction);
 
-	return output;
+	// return output;
+
+	// z * z - sin(z) - 1
+	// z * z - sin(z) - 0.5
+
+	// return draw_fractal(x, y, [](real x, real y) {
+
+	// 	th::complex z = th::complex(x, y);
+	// 	z = th::cube(z) - th::square(th::sin(z));
+
+	// 	std::array<real, 2> res;
+	// 	res[0] = z.Re();
+	// 	res[1] = z.Im();
+
+	// 	return res;
+	// }, 2, 100);
+
+	return draw_newton_fractal(x, y, {{1, 0},
+		{th::cos(TAU / 3), th::sin(TAU / 3)}, {th::cos(2 * TAU / 3), th::sin(2 * TAU / 3)}},
+		{pixel(200, 50, 50), pixel(50, 200, 50), pixel(50, 50, 200)});
 }
 
 
@@ -123,15 +143,19 @@ int main(int argc, char const *argv[]) {
 
 	std::cout << "Rendering image ..." << std::endl;
 
+#ifdef GIULIA_USE_OPENMP
+#pragma omp parallel for
+#endif
+
 	// Render the image
 	for (int i = 0; i < size; ++i) {
 
-		if((i == (size * progress / 100))) {
-			std::cout << "[" << progress << "%]" << std::endl;
-			progress += 10;
-		}
+		// if((i == (size * progress / 100))) {
+		// 	std::cout << "[" << progress << "%]" << std::endl;
+		// 	progress += 10;
+		// }
 
-		state["iteration"] += 1;
+		// state["iteration"] += 1;
 		
 		// Convert index to pixel location
 		real_t x = ((i % width) / (real_t) (width - 1)) - 0.5;
@@ -143,7 +167,7 @@ int main(int argc, char const *argv[]) {
 		img[i] = supersampling(x, y, state, draw, state["supersampling"], 0.25 / state["width"]);
 	}
 
-	std::cout << "[100%]" << std::endl;
+	// std::cout << "[100%]" << std::endl;
 
 	// Post-process the whole image
 	std::cout << "Post-processing ..." << std::endl;
