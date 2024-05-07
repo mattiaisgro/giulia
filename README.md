@@ -1,5 +1,5 @@
 # Giulia
-A simple rendering and image processing framework in procedural art.
+A lightweight rendering and image processing framework for procedural art.
 ![Julia fractal](https://github.com/chaotic-society/giulia/raw/main/giulia.png)
 _Giulia's fractal_
 
